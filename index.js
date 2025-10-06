@@ -36,38 +36,27 @@ app.get('/', function (req, res) {
 
 // Your first API endpoint
 app.get('/api/hello', function (req, res) {
-  res.json({ greeting: 'hello API' });
+  res.json({ greeting: 'hello API' })
 });
 
-app.post('/api/shorturl', urlencodedParser, function (req, res, next) {
-  req.body.url
-  if (!/^https?:$/.test(req.body.url)) {
-    req.lookupResult = { error: "Invalid url" }
-    next()
+app.post('/api/shorturl', urlencodedParser, (req, res, next) => {
+  // check if its in url format
+  let urlObj
+  try {
+    urlObj = new URL(req.body.url)
+  } catch {
+    console.log("not url format")
+    return res.json({ error: 'invalid url' })
   }
+  let hostname = urlObj.hostname
 
-  dns.lookup(req.body.url, (err, address, family) => {
+  dns.lookup(hostname, (err, address) => {
     if (err) {
-      req.lookupResult = { error: "Invalid url" }
-      next()
+      console.log("failed dns lookup")
+      return res.json({ error: 'invalid url' })
     }
-    /* 
-    Pke Construct URL
-    */
-    var original_url = req.body.url.href
-    var short_url = findURL(urls, original_url)
-
-    req.lookupResult = {
-      original_url: original_url,
-      short_url: short_url
-    }
-
-    console.log(original_url)
-    console.log(req.lookupResult)
-    next()
   })
-}, (req, res) => {
-  res.json(req.lookupResult)
+  return res.json({ hostname: hostname })
 })
 
 app.listen(port, function () {
